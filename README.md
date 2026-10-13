@@ -2,6 +2,12 @@
 
 A fun web app that helps non-native English speakers (Chilean kids, around 10 years old) practise English dictation and get ready for spelling bee contests. Buzz the bee guides the flash card; Dotty the ladybird looks after the results and the settings.
 
+> **🐝 Buzz:** "Bzzz! Hi, friend! Do you want to become a spelling champion? Listen to the word, spell it out loud, and I'll tell you how you did!"
+>
+> **🐞 Dotty:** "And I'll keep count of every word you get right, so you can watch your honeycomb fill up. Come and play with us!"
+>
+> ### 👉 [**Play now: jlulloaa.github.io/spelling-bee**](https://jlulloaa.github.io/spelling-bee/)
+
 It is a plain HTML/CSS/JavaScript single-page app: no build step, no dependencies, ready for GitHub Pages.
 
 ## How to play
@@ -63,7 +69,7 @@ Speech recognition needs `https://` or `localhost` and microphone permission.
 
 ## Publish with GitHub Pages
 
-Repository **Settings → Pages → Build and deployment → Deploy from a branch → `main` / root**. The app is then served at `https://<user>.github.io/spelling-bee/`.
+Repository **Settings → Pages → Build and deployment → Deploy from a branch → `main` / root**. The app is then served at <https://jlulloaa.github.io/spelling-bee/>.
 
 ## Tests
 
