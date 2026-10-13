@@ -101,6 +101,24 @@ test('extra homophones', () => {
   assert.equal(L('yes tea ay'), 'STA');
 });
 
+console.log('iPhone / iPad style transcripts');
+test('all-capitals runs are spelled letters (from a real iPhone log)', () => {
+  assert.equal(L('D'), 'D');
+  assert.equal(L('DI'), 'DI');
+  assert.equal(L('DIV'), 'DIV');
+  assert.equal(L('DIVE'), 'DIVE');
+});
+test('a spoken word is still not turned into letters', () => {
+  assert.equal(L('Dive'), '');
+  assert.equal(L('dive'), '');
+});
+test('"DOUBLE U" still means W', () => assert.equal(L('DOUBLE U'), 'W'));
+test('growing interim results end with every letter', () => {
+  let seg = [];
+  for (const s of ['D', 'DI', 'DIV', 'DIVE']) seg = V.updateSegment(seg, V.bestParse([s]));
+  assert.equal(seg.join('').toUpperCase(), 'DIVE');
+});
+
 console.log('texts');
 test('every key used in the code exists in both languages', () => {
   const src = ['app.js', 'index.html'].map((f) => fs.readFileSync(path.join(__dirname, '..', f.endsWith('.js') ? 'js' : '', f), 'utf8')).join('\n');

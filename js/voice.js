@@ -41,9 +41,8 @@
   });
 
   function parseLetters(transcript) {
-    var tokens = String(transcript || '').toLowerCase()
-      .replace(/[^a-z0-9\s\-]/g, ' ')
-      .split(/[\s\-]+/).filter(Boolean);
+    var raw = String(transcript || '').replace(/[^A-Za-z0-9\s\-]/g, ' ').split(/[\s\-]+/).filter(Boolean);
+    var tokens = raw.map(function (t) { return t.toLowerCase(); });
     var letters = [];
     var unparsed = 0;
     for (var i = 0; i < tokens.length; i++) {
@@ -53,6 +52,10 @@
         if (nx === 'you' || nx === 'u') { letters.push('w'); i++; }
         else if (nx && NAME_TO_LETTER[nx]) { letters.push(NAME_TO_LETTER[nx], NAME_TO_LETTER[nx]); i++; }
         else letters.push('w');
+      } else if (/^[A-Z]{2,}$/.test(raw[i])) {
+        // iPhones and iPads write spelled letters as an all-capitals run that grows as you speak
+        // ("D", "DI", "DIV", "DIVE"). A spoken word comes back in lower case or capitalised ("Dive").
+        for (var k = 0; k < t.length; k++) letters.push(t[k]);
       } else if (NAME_TO_LETTER[t]) {
         letters.push(NAME_TO_LETTER[t]);
       } else if (/^([a-z])\1+$/.test(t)) {
