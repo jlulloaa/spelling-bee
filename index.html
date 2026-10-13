@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Buzzy Spelling Bee</title>
+  <meta name="description" content="Practise English spelling for spelling bee contests with Buzz the bee and Dotty the ladybird.">
+  <meta name="theme-color" content="#FFC93C">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23FFC93C' stroke='%2325304F' stroke-width='6'/%3E%3Cpath d='M30 38v24M50 32v36M70 38v24' stroke='%2325304F' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="meadow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand" id="brand"></div>
+    <nav class="tabs" role="tablist" aria-label="Main">
+      <button class="tab-btn" role="tab" id="tabbtn-home" data-tab="home" aria-controls="tab-home" aria-selected="true">
+        <span class="tab-ico" data-icon="home"></span><span data-i18n="tab.home">Inicio</span>
+      </button>
+      <button class="tab-btn" role="tab" id="tabbtn-results" data-tab="results" aria-controls="tab-results" aria-selected="false" tabindex="-1">
+        <span class="tab-ico" data-icon="trophy"></span><span data-i18n="tab.results">Resultados</span>
+      </button>
+      <button class="tab-btn" role="tab" id="tabbtn-config" data-tab="config" aria-controls="tab-config" aria-selected="false" tabindex="-1">
+        <span class="tab-ico" data-icon="gear"></span><span data-i18n="tab.config">Ajustes</span>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HOME ------------------------------------------------------------ -->
+    <section id="tab-home" class="tab" role="tabpanel" aria-labelledby="tabbtn-home">
+      <p class="progress-pill" id="home-progress" aria-live="polite"></p>
+
+      <div class="card-scene">
+        <div class="card" id="card">
+
+          <!-- front -->
+          <div class="face front" id="card-front">
+            <div class="front-main" id="front-main">
+              <div class="slot slot-speaker">
+                <button class="tile tile-sky" id="btn-speaker" type="button" data-i18n-aria="home.speaker" data-icon="speaker"></button>
+                <span class="cap" data-i18n="home.speaker.cap">Listen</span>
+              </div>
+
+              <div class="slot slot-spell" id="slot-spell">
+                <div class="bee-slot" id="bee-slot">
+                  <button class="bee-btn" id="btn-bee" type="button" data-i18n-aria="home.bee"></button>
+                  <span class="cap" data-i18n="home.bee.cap">Spell it</span>
+                </div>
+
+                <div class="spell-wrap" id="spell-wrap" hidden>
+                  <div class="hint-bubble" id="hint-bubble" hidden role="status"></div>
+                  <div class="spell-box" id="spell-box" role="button" tabindex="0">
+                    <span class="spell-text" id="spell-text"></span>
+                    <input class="spell-input" id="spell-input" type="text" inputmode="text" enterkeyhint="done"
+                           autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" hidden>
+                  </div>
+                  <div class="spell-tools">
+                    <button class="mini-btn" id="btn-mic" type="button"></button>
+                    <button class="mini-btn" id="btn-undo" type="button" data-i18n-aria="home.undo" data-icon="backspace"></button>
+                    <button class="mini-btn" id="btn-clear" type="button" data-i18n-aria="home.clear" data-icon="restart"></button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slot slot-dict">
+                <button class="tile tile-leaf" id="btn-dict" type="button" data-i18n-aria="home.dict" data-icon="book"></button>
+                <span class="cap" data-i18n="home.dict.cap">Meaning</span>
+              </div>
+            </div>
+
+            <div class="finish-panel" id="finish-panel" hidden></div>
+          </div>
+
+          <!-- back -->
+          <div class="face back" id="card-back" tabindex="0" role="button" inert>
+            <div class="verdict">
+              <div class="verdict-bee" id="verdict-bee"></div>
+              <div class="bubble" id="verdict-bubble"></div>
+            </div>
+            <div class="given" id="given" aria-live="polite"></div>
+            <div class="answer" id="answer"></div>
+            <div class="meaning" id="meaning"></div>
+            <p class="next-hint" id="next-hint"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="under-card">
+        <button class="chip" id="btn-kbd" type="button"></button>
+        <p class="note" id="home-note" role="status"></p>
+      </div>
+    </section>
+
+    <!-- RESULTS --------------------------------------------------------- -->
+    <section id="tab-results" class="tab" role="tabpanel" aria-labelledby="tabbtn-results" hidden>
+      <div id="results-root"></div>
+    </section>
+
+    <!-- CONFIG ---------------------------------------------------------- -->
+    <section id="tab-config" class="tab" role="tabpanel" aria-labelledby="tabbtn-config" hidden>
+      <div id="config-root"></div>
+    </section>
+  </main>
+
+  <dialog id="dict-dialog" aria-labelledby="dict-title">
+    <div class="dict-head">
+      <div class="dict-bee" id="dict-bee"></div>
+      <h2 id="dict-title"></h2>
+      <button class="close-btn" id="dict-close" type="button" data-icon="close"></button>
+    </div>
+    <div class="dict-body" id="dict-body"></div>
+  </dialog>
+
+  <div class="toast-layer" id="toast-layer" aria-live="polite"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/mascots.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
