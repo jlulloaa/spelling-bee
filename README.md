@@ -58,6 +58,8 @@ Moon,,,
 
 ### Troubleshooting the microphone
 
+On phones and tablets the browser ends its listening session after every short phrase, so the app restarts it straight away. A "Speak now" / "Wait a moment…" light above the buttons shows when it can hear the next letter: say each letter with a short pause. Chrome on Android plays a small sound at each restart, and Safari and Chrome on iOS (which both use the same speech engine) are the least reliable; the keyboard button is always there as a backup.
+
 Add `?debug` to the address (for example `https://jlulloaa.github.io/spelling-bee/?debug`) to show a small panel with what the browser's speech recogniser hears, letter by letter. It helps to see whether a missing letter was not heard or was heard as another word.
 
 ## Run it locally

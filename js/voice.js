@@ -112,7 +112,7 @@
   var supportsRecognition = !!SR;
   var IS_ANDROID = !!(root.navigator && /Android/i.test(root.navigator.userAgent || ''));
 
-  // handlers: onLetters(array), onEnd(reason, letters), onError(code), optional onDebug(text)
+  // handlers: onLetters(array), onEnd(reason, letters), onError(code), optional onReady(bool), onDebug(text)
   function createListener(handlers) {
     var rec = null;
     var base = [];          // letters from earlier recogniser sessions in this turn
@@ -125,6 +125,11 @@
     var restarts = 0;
     var gotAnything = false;
     var failed = false;
+    var startedAt = 0;      // when the child pressed the bee
+    var sessionAt = 0;      // when the running recogniser session started
+    var quickEnds = 0;      // sessions in a row that died at once without hearing anything
+    var readyTimer = null;
+    function ready(r) { if (handlers.onReady) handlers.onReady(r); }
 
     function all() { return base.concat(current); }
     function clearTimer() { if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; } }
@@ -140,7 +145,13 @@
       rec.interimResults = true;
       rec.maxAlternatives = 5;
       current = []; segs = [];
+      sessionAt = Date.now();
       dbg('start session');
+      ready(false);
+      clearTimeout(readyTimer);
+      // Not every browser reports when it starts hearing: assume ready shortly after starting.
+      readyTimer = setTimeout(function () { if (running) ready(true); }, 900);
+      rec.onaudiostart = function () { clearTimeout(readyTimer); ready(true); };
       rec.onresult = function (ev) {
         var lines = [];
         for (var i = 0; i < ev.results.length; i++) {
@@ -153,6 +164,7 @@
         segs.length = ev.results.length;
         current = mergeSegments(segs, IS_ANDROID);
         if (current.length) gotAnything = true;
+        ready(true);
         armTimer(4000);
         dbg(lines.join(' | '));
         handlers.onLetters(all());
@@ -169,16 +181,23 @@
       };
       rec.onend = function () {
         dbg('session ended');
+        ready(false);
         if (!running) return;
         if (finishing) { finish('done'); return; }
-        // Chrome sometimes ends a long session by itself: carry on a few times.
-        if (restarts < 8 && gotAnything) {
-          restarts++;
+        // Phones end a session after every short utterance, so start the next one at once, otherwise
+        // the following letter is lost. Give up if sessions keep dying without hearing anything.
+        var now = Date.now();
+        quickEnds = (!current.length && now - sessionAt < 700) ? quickEnds + 1 : 0;
+        var keepGoing = (gotAnything || now - startedAt < 9000) && quickEnds < 5 && now - startedAt < 60000;
+        if (keepGoing) {
           base = all();
-          setTimeout(function () {
-            if (!running || finishing) return;
-            try { begin(); } catch (e) { finish('done'); }
-          }, 150);
+          try { begin(); }
+          catch (e) {
+            setTimeout(function () {
+              if (!running || finishing) return;
+              try { begin(); } catch (e2) { finish(gotAnything ? 'done' : 'error'); }
+            }, 250);
+          }
           return;
         }
         finish(gotAnything ? 'done' : 'nospeech');
@@ -190,6 +209,7 @@
       if (!running) return;
       running = false;
       clearTimer();
+      clearTimeout(readyTimer);
       try { rec.onend = null; rec.onresult = null; rec.onerror = null; rec.stop(); } catch (e) { /* already stopped */ }
       handlers.onEnd(reason, all());
     }
@@ -206,7 +226,8 @@
     return {
       start: function (existing) {
         base = existing ? existing.slice() : [];
-        current = []; restarts = 0; gotAnything = base.length > 0; failed = false; finishing = false;
+        current = []; restarts = 0; quickEnds = 0; startedAt = Date.now();
+        gotAnything = base.length > 0; failed = false; finishing = false;
         running = true;
         try { begin(); } catch (e) { running = false; handlers.onError('error'); return false; }
         armTimer(9000);

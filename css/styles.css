@@ -457,3 +457,11 @@ dialog::backdrop { background: rgba(37, 48, 79, 0.55); }
 /* invitation to press the bee after the word was played */
 .bee-prompt { margin-bottom: 12px; animation: prompt-in 0.3s ease-out; }
 @keyframes prompt-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* "speak now / wait" light while listening */
+.listen-status {
+  padding: 2px 14px; background: var(--leaf-pale); border: 2.5px solid var(--leaf); border-radius: 999px;
+  font-weight: 600; font-size: 14px; color: #1f6b39;
+}
+.listen-status.busy { background: var(--honey-pale); border-color: var(--honey-deep); color: #8a5d00; }
+.spell-box.listening.busy { border-color: var(--honey-deep); border-style: dashed; animation: none; }

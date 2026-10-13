@@ -135,6 +135,7 @@
     lastTap: 0,
     micBlocked: false,
     meaningToken: 0,
+    ready: false,        // the recogniser is running and can hear the next letter
     spoke: false         // the word has been played, so invite the child to press the bee
   };
   var el = {};
@@ -176,6 +177,10 @@
       el.spellText.innerHTML = lettersHtml();
     }
     el.spellBox.classList.toggle('listening', ph === 'listening');
+    el.spellBox.classList.toggle('busy', ph === 'listening' && !home.ready);
+    el.listenStatus.hidden = ph !== 'listening';
+    el.listenStatus.classList.toggle('busy', !home.ready);
+    el.listenStatus.textContent = t(home.ready ? 'home.speakNow' : 'home.wait');
     el.spellBox.classList.toggle('empty', !home.letters.length);
     el.spellBox.setAttribute('aria-label', t(typing ? 'home.boxTyping' : 'home.boxLabel') +
       (home.letters.length ? ' ' + home.letters.join(' ') : ''));
@@ -269,6 +274,10 @@
     if (home.listener) return home.listener;
     home.listener = Voice.createListener({
       onDebug: dbg,
+      onReady: function (r) {
+        home.ready = r;
+        if (home.phase === 'listening') renderFront();
+      },
       onLetters: function (arr) {
         if (home.phase !== 'listening') return;
         home.letters = arr.map(function (c) { return c.toUpperCase(); });
@@ -304,6 +313,7 @@
     if (home.phase === 'back' || home.phase === 'finished') return;
     Voice.stopSpeaking();
     if (!keep) home.letters = [];
+    home.ready = false;
     home.phase = 'listening';
     renderFront();
     var L = ensureListener();
@@ -540,7 +550,7 @@
     el.beeSlot = $('#bee-slot'); el.slotSpell = $('#slot-spell');
     el.spellWrap = $('#spell-wrap'); el.spellBox = $('#spell-box');
     el.spellText = $('#spell-text'); el.spellInput = $('#spell-input');
-    el.hint = $('#hint-bubble'); el.beeHint = $('#bee-hint');
+    el.hint = $('#hint-bubble'); el.beeHint = $('#bee-hint'); el.listenStatus = $('#listen-status');
     el.btnSpeaker = $('#btn-speaker'); el.btnBee = $('#btn-bee'); el.btnDict = $('#btn-dict');
     el.btnMic = $('#btn-mic'); el.btnUndo = $('#btn-undo'); el.btnClear = $('#btn-clear');
     el.btnKbd = $('#btn-kbd'); el.note = $('#home-note'); el.progress = $('#home-progress');
