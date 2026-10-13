@@ -134,7 +134,8 @@
     listener: null,
     lastTap: 0,
     micBlocked: false,
-    meaningToken: 0
+    meaningToken: 0,
+    spoke: false         // the word has been played, so invite the child to press the bee
   };
   var el = {};
 
@@ -178,6 +179,8 @@
     el.spellBox.classList.toggle('empty', !home.letters.length);
     el.spellBox.setAttribute('aria-label', t(typing ? 'home.boxTyping' : 'home.boxLabel') +
       (home.letters.length ? ' ' + home.letters.join(' ') : ''));
+    el.beeHint.hidden = !(ph === 'idle' && home.spoke);
+    el.beeHint.innerHTML = '<span class="hint-bee">' + M.bee('wink') + '</span><span>' + esc(t('home.hintSpell')) + '</span>';
     el.hint.hidden = ph !== 'captured';
     el.hint.innerHTML = '<span class="hint-bee">' + M.bee('wink') + '</span><span>' + esc(t('home.hint')) + '</span>';
 
@@ -213,6 +216,7 @@
     var entry = Store.takeNext();
     home.letters = [];
     home.correct = false;
+    home.spoke = false;
     if (!entry) {
       home.entry = null;
       home.phase = 'finished';
@@ -254,6 +258,7 @@
   function onSpeaker() {
     if (!home.entry) return;
     Voice.speakWord(home.entry, Store.get().accent);
+    if (home.phase === 'idle' && !home.spoke) { home.spoke = true; renderFront(); }
     el.btnSpeaker.classList.add('speaking');
     setTimeout(function () { el.btnSpeaker.classList.remove('speaking'); }, 1600);
   }
@@ -535,7 +540,7 @@
     el.beeSlot = $('#bee-slot'); el.slotSpell = $('#slot-spell');
     el.spellWrap = $('#spell-wrap'); el.spellBox = $('#spell-box');
     el.spellText = $('#spell-text'); el.spellInput = $('#spell-input');
-    el.hint = $('#hint-bubble');
+    el.hint = $('#hint-bubble'); el.beeHint = $('#bee-hint');
     el.btnSpeaker = $('#btn-speaker'); el.btnBee = $('#btn-bee'); el.btnDict = $('#btn-dict');
     el.btnMic = $('#btn-mic'); el.btnUndo = $('#btn-undo'); el.btnClear = $('#btn-clear');
     el.btnKbd = $('#btn-kbd'); el.note = $('#home-note'); el.progress = $('#home-progress');
