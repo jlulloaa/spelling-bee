@@ -5,6 +5,19 @@
   var Store = SB.Store, Voice = SB.Voice, M = SB.Mascots, U = SB.Util, I = SB.I18n;
   var t = I.t;
 
+  // Add ?debug to the address to see what the browser's speech recogniser hears.
+  var DEBUG = /[?&]debug\b/.test(location.search);
+  function dbg(msg) {
+    if (!DEBUG) return;
+    var box = document.getElementById('debug-log');
+    if (!box) {
+      box = document.createElement('pre');
+      box.id = 'debug-log';
+      document.body.appendChild(box);
+    }
+    box.textContent = (new Date().toLocaleTimeString() + ' ' + msg + '\n' + box.textContent).slice(0, 2400);
+  }
+
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(s, r) { return (r || document).querySelector(s); }
@@ -250,12 +263,14 @@
   function ensureListener() {
     if (home.listener) return home.listener;
     home.listener = Voice.createListener({
+      onDebug: dbg,
       onLetters: function (arr) {
         if (home.phase !== 'listening') return;
         home.letters = arr.map(function (c) { return c.toUpperCase(); });
         renderFront();
       },
       onEnd: function (reason, arr) {
+        dbg('end: ' + reason + ' letters=' + arr.join(''));
         if (home.phase !== 'listening') return;
         home.letters = arr.map(function (c) { return c.toUpperCase(); });
         if (!home.letters.length) {

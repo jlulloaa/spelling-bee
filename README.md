@@ -56,6 +56,10 @@ Moon,,,
 - **Definitions**: [dictionaryapi.dev](https://dictionaryapi.dev) (Wiktionary data, CC BY-SA), then the Wikipedia summary API when a word is not found. Cambridge and Oxford do not offer free public APIs.
 - **Listening to the spelling**: the browser's Web Speech API, set to English. Letter names and common mis-hearings are mapped back to letters ("double you" becomes W). It works in Chrome, Edge and Safari and needs an internet connection; Firefox has no support, so the keyboard is used there.
 
+### Troubleshooting the microphone
+
+Add `?debug` to the address (for example `https://jlulloaa.github.io/spelling-bee/?debug`) to show a small panel with what the browser's speech recogniser hears, letter by letter. It helps to see whether a missing letter was not heard or was heard as another word.
+
 ## Run it locally
 
 Opening `index.html` directly from disk will not load the word list (browsers block `fetch` on `file://`). Use any static server:

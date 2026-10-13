@@ -76,6 +76,31 @@ test('best alternative wins', () => {
   assert.equal(V.bestLetters(['wood', 'w o o d', 'would']).join('').toUpperCase(), 'WOOD');
 });
 
+console.log('keeping letters while the recogniser changes its mind');
+const P = (s) => V.bestParse([s]);
+test('a word-like re-hearing does not wipe the letters', () => {
+  let seg = V.updateSegment([], P('p l a'));
+  assert.equal(seg.join(''), 'pla');
+  seg = V.updateSegment(seg, P('play'));            // browser heard an ordinary word
+  assert.equal(seg.join(''), 'pla');
+  seg = V.updateSegment(seg, P('p l a y'));         // a proper reading replaces it
+  assert.equal(seg.join(''), 'play');
+});
+test('a first word-like guess leaves the segment empty', () => {
+  assert.deepEqual(V.updateSegment([], P('wood')), []);
+});
+test('segments are joined in order, repeated letters survive', () => {
+  assert.equal(V.mergeSegments([['w'], ['o'], ['o', 'd']], false).join(''), 'wood');
+  assert.equal(V.mergeSegments([['o'], ['o']], true).join(''), 'oo');
+});
+test('Android cumulative results are collapsed', () => {
+  assert.equal(V.mergeSegments([['p'], ['p', 'l'], ['p', 'l', 'a'], ['p', 'l', 'a', 'y']], true).join(''), 'play');
+  assert.equal(V.mergeSegments([['p'], ['p', 'l'], ['p', 'l', 'a']], false).join(''), 'pplpla');
+});
+test('extra homophones', () => {
+  assert.equal(L('yes tea ay'), 'STA');
+});
+
 console.log('texts');
 test('every key used in the code exists in both languages', () => {
   const src = ['app.js', 'index.html'].map((f) => fs.readFileSync(path.join(__dirname, '..', f.endsWith('.js') ? 'js' : '', f), 'utf8')).join('\n');

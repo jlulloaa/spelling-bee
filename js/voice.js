@@ -7,25 +7,25 @@
   /* ---------- turning "double you oh oh dee" into W, O, O, D ---------- */
 
   var LETTER_NAMES = {
-    a: ['ay', 'eh', 'hey'],
+    a: ['ay', 'eh', 'hey', 'hay'],
     b: ['be', 'bee', 'bea'],
     c: ['see', 'sea', 'cee'],
     d: ['dee', 'de'],
     e: ['ee'],
     f: ['eff', 'ef'],
     g: ['gee', 'jee', 'ji'],
-    h: ['aitch', 'haitch', 'ach'],
+    h: ['aitch', 'haitch', 'ach', 'age'],
     i: ['eye', 'aye'],
     j: ['jay', 'jai'],
-    k: ['kay', 'kai'],
+    k: ['kay', 'kai', 'okay', 'ok'],
     l: ['el', 'ell'],
     m: ['em'],
-    n: ['en', 'and'],
+    n: ['en', 'and', 'in', 'an'],
     o: ['oh', 'owe', '0'],
     p: ['pee', 'pea'],
     q: ['queue', 'cue', 'kew'],
     r: ['are', 'ar'],
-    s: ['ess', 'es'],
+    s: ['ess', 'es', 'yes'],
     t: ['tee', 'tea'],
     u: ['you', 'ewe', 'yu'],
     v: ['vee', 've'],
@@ -66,26 +66,59 @@
   }
 
   // The recogniser offers several guesses per phrase; keep the one that reads best as letters.
-  function bestLetters(alternatives) {
+  function bestParse(alternatives) {
     var best = null;
     (alternatives || []).forEach(function (alt, idx) {
       var p = parseLetters(alt);
       var score = p.letters.length * 10 - p.unparsed * 14 - idx;
-      if (!best || score > best.score) best = { score: score, letters: p.letters };
+      if (!best || score > best.score) best = { score: score, letters: p.letters, unparsed: p.unparsed };
     });
-    return best ? best.letters : [];
+    return best || { letters: [], unparsed: 0 };
+  }
+
+  function bestLetters(alternatives) { return bestParse(alternatives).letters; }
+
+  // A segment is one entry of the recogniser's result list. When the browser re-hears the spelling
+  // as an ordinary word ("p l a y" -> "play") the new guess has no usable letters: keep what we had.
+  function updateSegment(prev, parsed) {
+    prev = prev || [];
+    if (parsed.unparsed > 0 && parsed.letters.length < prev.length) return prev;
+    return parsed.letters;
+  }
+
+  function startsWith(longer, shorter) {
+    if (shorter.length > longer.length) return false;
+    for (var i = 0; i < shorter.length; i++) if (longer[i] !== shorter[i]) return false;
+    return true;
+  }
+
+  // Joins the segments into one list of letters. Android Chrome repeats the text so far as a new
+  // result each time ("p", "p l", "p l a"); with cumulative=true a longer segment that starts with
+  // the previous one replaces it. Equal segments are kept (the same letter can be said twice).
+  function mergeSegments(segs, cumulative) {
+    var blocks = [];
+    segs.forEach(function (seg) {
+      if (!seg || !seg.length) return;
+      var last = blocks[blocks.length - 1];
+      if (cumulative && last && seg.length > last.length && startsWith(seg, last)) blocks[blocks.length - 1] = seg;
+      else blocks.push(seg);
+    });
+    return blocks.reduce(function (acc, b) { return acc.concat(b); }, []);
   }
 
   /* ---------- speech recognition ---------- */
 
   var SR = root.SpeechRecognition || root.webkitSpeechRecognition;
   var supportsRecognition = !!SR;
+  var IS_ANDROID = !!(root.navigator && /Android/i.test(root.navigator.userAgent || ''));
 
-  // handlers: onLetters(array), onEnd(reason), onError(code)
+  // handlers: onLetters(array), onEnd(reason, letters), onError(code), optional onDebug(text)
   function createListener(handlers) {
     var rec = null;
     var base = [];          // letters from earlier recogniser sessions in this turn
     var current = [];       // letters from the running session
+    var segs = [];          // per-result letters of the running session
+    function dbg(m) { if (handlers.onDebug) handlers.onDebug(m); }
     var silenceTimer = null;
     var running = false;
     var finishing = false;
@@ -106,22 +139,27 @@
       rec.continuous = true;
       rec.interimResults = true;
       rec.maxAlternatives = 5;
-      current = [];
+      current = []; segs = [];
+      dbg('start session');
       rec.onresult = function (ev) {
-        var letters = [];
+        var lines = [];
         for (var i = 0; i < ev.results.length; i++) {
           var res = ev.results[i];
           var alts = [];
           for (var j = 0; j < res.length; j++) alts.push(res[j].transcript);
-          letters = letters.concat(bestLetters(alts));
+          segs[i] = updateSegment(segs[i], bestParse(alts));
+          lines.push(i + (res.isFinal ? 'F' : 'i') + ' "' + alts[0] + '" -> ' + segs[i].join('').toUpperCase());
         }
-        current = letters;
-        if (letters.length) gotAnything = true;
-        armTimer(3200);
+        segs.length = ev.results.length;
+        current = mergeSegments(segs, IS_ANDROID);
+        if (current.length) gotAnything = true;
+        armTimer(4000);
+        dbg(lines.join(' | '));
         handlers.onLetters(all());
       };
       rec.onerror = function (ev) {
         var code = ev && ev.error;
+        dbg('error ' + code);
         if (code === 'aborted') return;
         if (code === 'no-speech') return; // handled when the session ends
         failed = true;
@@ -130,13 +168,18 @@
           : code === 'network' ? 'network' : 'error');
       };
       rec.onend = function () {
+        dbg('session ended');
         if (!running) return;
         if (finishing) { finish('done'); return; }
         // Chrome sometimes ends a long session by itself: carry on a few times.
-        if (restarts < 3 && gotAnything) {
+        if (restarts < 8 && gotAnything) {
           restarts++;
           base = all();
-          try { begin(); return; } catch (e) { /* fall through */ }
+          setTimeout(function () {
+            if (!running || finishing) return;
+            try { begin(); } catch (e) { finish('done'); }
+          }, 150);
+          return;
         }
         finish(gotAnything ? 'done' : 'nospeech');
       };
@@ -400,6 +443,8 @@
   SB.Voice = {
     parseLetters: parseLetters,
     bestLetters: bestLetters,
+    updateSegment: updateSegment,
+    mergeSegments: mergeSegments,
     supportsRecognition: supportsRecognition,
     supportsSpeech: !!synth,
     createListener: createListener,
@@ -411,6 +456,6 @@
   };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { parseLetters: parseLetters, bestLetters: bestLetters };
+    module.exports = { parseLetters: parseLetters, bestLetters: bestLetters, bestParse: bestParse, updateSegment: updateSegment, mergeSegments: mergeSegments };
   }
 })(typeof window !== 'undefined' ? window : globalThis);
