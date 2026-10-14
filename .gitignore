@@ -402,3 +402,4 @@ FodyWeavers.xsd
 
 # Local settings
 docs/
+.DS_Store
